@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chuyên Gia Pha Chế: Giải Mã Hệ Đệm</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-light: #eff6ff;
+            --success: #16a34a;
+            --danger: #dc2626;
+            --warning: #f59e0b;
+            --bg: #f1f5f9;
+            --text: #1e293b;
+            --board-bg: #334155;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        #game-container {
+            width: 100%;
+            max-width: 900px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* HEADER & PROGRESS */
+        header {
+            background-color: var(--primary);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        header h1 {
+            font-size: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        #progress-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: bold;
+        }
+
+        #progress-bar {
+            width: 150px;
+            height: 10px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        #progress-fill {
+            height: 100%;
+            background: #fde047;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        /* MAIN CONTENT */
+        main {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* ORDER BOARD */
+        #order-board {
+            background-color: var(--board-bg);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            border-left: 5px solid #fcd34d;
+            font-size: 1.1rem;
+            line-height: 1.5;
+        }
+
+        /* PLAY AREA */
+        #play-area {
+            display: flex;
+            gap: 20px;
+            min-height: 300px;
+        }
+
+        /* SHELF */
+        #shelf-container {
+            flex: 1;
+            background: var(--primary-light);
+            border-radius: 8px;
+            padding: 15px;
+            border: 2px dashed #93c5fd;
+        }
+
+        #shelf-container h3 {
+            margin-bottom: 15px;
+            color: var(--primary);
+            font-size: 1rem;
+            text-align: center;
+        }
+
+        #shelf {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+            min-height: 200px;
+        }
+
+        /* WORKBENCH & BEAKER */
+        #workbench {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #f8fafc;
+            border-radius: 8px;
+            border: 2px solid #e2e8f0;
+            padding: 15px;
+            position: relative;
+        }
+
+        #workbench h3 {
+            margin-bottom: 20px;
+            color: #475569;
+            font-size: 1rem;
+        }
+
+        #beaker {
+            width: 160px;
+            height: 180px;
+            border: 4px solid #cbd5e1;
+            border-top: none;
+            border-radius: 0 0 15px 15px;
+            position: relative;
+            background: rgba(248, 250, 252, 0.8);
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            gap: 10px;
+            padding-bottom: 10px;
+            transition: all 0.3s ease;
+        }
+
+        #beaker::before {
+            content: '';
+            position: absolute;
+            top: -4px;
+            left: -15px;
+            width: 15px;
+            height: 4px;
+            background: #cbd5e1;
+            border-radius: 2px;
+        }
+        #beaker::after {
+            content: '';
+            position: absolute;
+            top: -4px;
+            right: -15px;
+            width: 15px;
+            height: 4px;
+            background: #cbd5e1;
+            border-radius: 2px;
+        }
+
+        #beaker.drag-over {
+            background: rgba(186, 230, 253, 0.3);
+            border-color: #38bdf8;
+        }
+
+        #liquid {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 0%;
+            background: rgba(56, 189, 248, 0.2);
+            border-radius: 0 0 11px 11px;
+            transition: height 0.5s ease, background-color 0.5s ease;
+            z-index: 0;
+        }
+
+        #beaker-slots {
+            display: flex;
+            gap: 15px;
+            z-index: 1;
+            min-height: 90px;
+            width: 100%;
+            justify-content: center;
+            align-items: flex-end;
+        }
+
+        /* BOTTLES */
+        .bottle {
+            width: 60px;
+            height: 80px;
+            background: linear-gradient(135deg, #ffffff 0%, #e0f2fe 100%);
+            border: 2px solid #0ea5e9;
+            border-radius: 8px 8px 15px 15px;
+            position: relative;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 13px;
+            color: #0c4a6e;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            user-select: none;
+            transition: transform 0.2s, box-shadow 0.2s;
+            text-align: center;
+            padding: 2px;
+            word-wrap: break-word;
+        }
+
+        .bottle:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0,0,0,0.15);
+        }
+
+        .bottle::before {
+            content: '';
+            position: absolute;
+            top: -14px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 12px;
+            background: #bae6fd;
+            border: 2px solid #0ea5e9;
+            border-radius: 4px;
+        }
+
+        .bottle.dragging {
+            opacity: 0.5;
+        }
+
+        /* UTILS */
+        .reset-btn {
+            margin-top: 20px;
+            padding: 8px 16px;
+            background: #e2e8f0;
+            border: none;
+            border-radius: 4px;
+            color: #475569;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .reset-btn:hover {
+            background: #cbd5e1;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* MODAL */
+        #modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .modal {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+            animation: popIn 0.3s ease-out;
+        }
+
+        .modal-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+
+        .modal h2 {
+            margin-bottom: 10px;
+            color: var(--text);
+        }
+
+        .modal p {
+            color: #475569;
+            line-height: 1.5;
+            margin-bottom: 20px;
+        }
+
+        .modal button {
+            padding: 10px 24px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .modal button:hover {
+            background: #1d4ed8;
+        }
+
+        /* ANIMATIONS */
+        @keyframes popIn {
+            0% { transform: scale(0.9); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            50% { transform: translateX(5px); }
+            75% { transform: translateX(-5px); }
+        }
+        .shake {
+            animation: shake 0.4s ease-in-out;
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 768px) {
+            #play-area {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <header>
+        <h1>🧪 Chuyên Gia Pha Chế: Giải Mã Hệ Đệm</h1>
+        <div id="progress-container">
+            <span id="level-indicator">Cấp: 1/5</span>
+            <div id="progress-bar">
+                <div id="progress-fill"></div>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <div id="order-board">
+            Đang tải đơn hàng...
+        </div>
+
+        <div id="play-area">
+            <div id="shelf-container">
+                <h3>Kệ Hóa Chất (Kéo thả hoặc Nhấp)</h3>
+                <div id="shelf">
+                    <!-- Bottles generated here -->
+                </div>
+            </div>
+
+            <div id="workbench">
+                <h3>Bàn Pha Chế</h3>
+                <div id="beaker" ondrop="drop(event)" ondragover="allowDrop(event)" ondragleave="dragLeave(event)">
+                    <div id="liquid"></div>
+                    <div id="beaker-slots">
+                        <!-- Dropped bottles go here -->
+                    </div>
+                </div>
+                <button class="reset-btn" onclick="resetBeaker()">Đổ bỏ & Làm lại</button>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Modal -->
+<div id="modal-overlay" class="hidden">
+    <div class="modal">
+        <div id="modal-icon" class="modal-icon">✅</div>
+        <h2 id="modal-title">Kết quả</h2>
+        <p id="modal-msg">Chi tiết kết quả ở đây.</p>
+        <button id="modal-btn" onclick="handleModalAction()">Tiếp tục</button>
+    </div>
+</div>
+
+<script>
+    // --- DATABASE MÔ PHỎNG KIẾN THỨC HÓA HỌC ---
+    // Phân loại: weak_acid, weak_base, strong_acid, strong_base, salt
+    const chemDB = {
+        "CH3COOH": { name: "CH3COOH", type: "weak_acid" },
+        "CH3COONa": { name: "CH3COONa", type: "salt", conjugate: "CH3COOH" },
+        "HCl": { name: "HCl", type: "strong_acid" },
+        "NaCl": { name: "NaCl", type: "salt", conjugate: "HCl" },
+        "NH3": { name: "NH3", type: "weak_base" },
+        "NH4Cl": { name: "NH4Cl", type: "salt", conjugate: "NH3" },
+        "NaOH": { name: "NaOH", type: "strong_base" },
+        "KCl": { name: "KCl", type: "salt" },
+        "HF": { name: "HF", type: "weak_acid" },
+        "NaF": { name: "NaF", type: "salt", conjugate: "HF" },
+        "HNO3": { name: "HNO3", type: "strong_acid" },
+        "NaNO3": { name: "NaNO3", type: "salt", conjugate: "HNO3" },
+        "H2CO3": { name: "H2CO3", type: "weak_acid" },
+        "NaHCO3": { name: "NaHCO3", type: "salt", conjugate: "H2CO3" },
+        "H3PO4": { name: "H3PO4", type: "weak_acid" },
+        "NaH2PO4": { name: "NaH2PO4", type: "salt", conjugate: "H3PO4" },
+        "KOH": { name: "KOH", type: "strong_base" }
+    };
+
+    // --- CÁC CẤP ĐỘ (ĐƠN HÀNG) ---
+    const levels = [
+        {
+            order: "Đơn hàng 1: Cần gấp một hệ đệm acid cơ bản để duy trì pH < 7. Hãy chọn đúng chất!",
+            bottles: ["CH3COOH", "CH3COONa", "HCl", "NaCl"]
+        },
+        {
+            order: "Đơn hàng 2: Lần này nhà máy cần một hệ đệm base để duy trì pH > 7.",
+            bottles: ["NH3", "NH4Cl", "NaOH", "KCl"]
+        },
+        {
+            order: "Đơn hàng 3: Cẩn thận bẫy hóa chất! Hãy pha chế một hệ đệm acid vô cơ.",
+            bottles: ["HF", "NaF", "HNO3", "NaNO3"]
+        },
+        {
+            order: "Đơn hàng 4: Cần pha chế một hệ đệm sinh lý (đệm carbonat) quan trọng cho máu người.",
+            bottles: ["H2CO3", "NaHCO3", "NaOH", "NaCl"]
+        },
+        {
+            order: "Đơn hàng 5: Bài kiểm tra cuối cấp! Hãy tinh mắt chọn ra một cặp đệm chuẩn xác từ đống lộn xộn này.",
+            bottles: ["H3PO4", "NaH2PO4", "CH3COOH", "NH4Cl", "HCl", "KOH"]
+        }
+    ];
+
+    // --- GAME STATE ---
+    let currentLevel = 0;
+    let shelfItems = [];
+    let beakerItems = [];
+    let modalActionType = "next"; // "next", "retry", "finish"
+
+    // --- DOM ELEMENTS ---
+    const orderBoard = document.getElementById("order-board");
+    const shelfDiv = document.getElementById("shelf");
+    const beakerSlots = document.getElementById("beaker-slots");
+    const beaker = document.getElementById("beaker");
+    const liquid = document.getElementById("liquid");
+    const levelIndicator = document.getElementById("level-indicator");
+    const progressFill = document.getElementById("progress-fill");
+    
+    const modalOverlay = document.getElementById("modal-overlay");
+    const modalIcon = document.getElementById("modal-icon");
+    const modalTitle = document.getElementById("modal-title");
+    const modalMsg = document.getElementById("modal-msg");
+    const modalBtn = document.getElementById("modal-btn");
+
+    // --- INITIALIZATION ---
+    function initGame() {
+        currentLevel = 0;
+        loadLevel();
+    }
+
+    function loadLevel() {
+        const levelData = levels[currentLevel];
+        orderBoard.innerHTML = `<strong>Nhiệm vụ:</strong> <br/>${levelData.order}`;
+        levelIndicator.innerText = `Cấp: ${currentLevel + 1}/${levels.length}`;
+        progressFill.style.width = `${(currentLevel / levels.length) * 100}%`;
+        
+        shelfItems = [...levelData.bottles];
+        beakerItems = [];
+        
+        renderShelf();
+        renderBeaker();
+        updateLiquid();
+    }
+
+    // --- RENDERING ---
+    function renderShelf() {
+        shelfDiv.innerHTML = "";
+        shelfItems.forEach(id => {
+            const chem = chemDB[id];
+            const bottle = document.createElement("div");
+            bottle.className = "bottle";
+            bottle.id = `bottle-${id}`;
+            bottle.draggable = true;
+            bottle.innerHTML = chem.name;
+            
+            // Drag Events
+            bottle.addEventListener('dragstart', (e) => {
+                e.dataTransfer.setData("text/plain", id);
+                setTimeout(() => bottle.classList.add('dragging'), 0);
+            });
+            bottle.addEventListener('dragend', () => {
+                bottle.classList.remove('dragging');
+            });
+            
+            // Click Event (Alternative to drag & drop)
+            bottle.onclick = () => moveToBeaker(id);
+            
+            shelfDiv.appendChild(bottle);
+        });
+    }
+
+    function renderBeaker() {
+        beakerSlots.innerHTML = "";
+        beakerItems.forEach(id => {
+            const chem = chemDB[id];
+            const bottle = document.createElement("div");
+            bottle.className = "bottle";
+            bottle.innerHTML = chem.name;
+            // Click to remove
+            bottle.onclick = () => moveToShelf(id);
+            beakerSlots.appendChild(bottle);
+        });
+    }
+
+    function updateLiquid() {
+        if (beakerItems.length === 0) {
+            liquid.style.height = "0%";
+            liquid.style.backgroundColor = "rgba(56, 189, 248, 0.2)";
+        } else if (beakerItems.length === 1) {
+            liquid.style.height = "30%";
+            liquid.style.backgroundColor = "rgba(56, 189, 248, 0.4)";
+        } else if (beakerItems.length === 2) {
+            liquid.style.height = "60%";
+        }
+    }
+
+    // --- INTERACTIONS ---
+    function moveToBeaker(id) {
+        if (beakerItems.length >= 2) return; // Beaker full
+        
+        // Remove from shelf, add to beaker
+        shelfItems = shelfItems.filter(item => item !== id);
+        beakerItems.push(id);
+        
+        renderShelf();
+        renderBeaker();
+        updateLiquid();
+        
+        if (beakerItems.length === 2) {
+            setTimeout(evaluateMix, 400); // Wait a bit for animation
+        }
+    }
+
+    function moveToShelf(id) {
+        beakerItems = beakerItems.filter(item => item !== id);
+        shelfItems.push(id);
+        
+        renderShelf();
+        renderBeaker();
+        updateLiquid();
+    }
+
+    function resetBeaker() {
+        if (beakerItems.length === 0) return;
+        shelfItems.push(...beakerItems);
+        beakerItems = [];
+        renderShelf();
+        renderBeaker();
+        updateLiquid();
+    }
+
+    // --- DRAG AND DROP API ---
+    function allowDrop(ev) {
+        ev.preventDefault();
+        if (beakerItems.length < 2) {
+            beaker.classList.add("drag-over");
+        }
+    }
+
+    function dragLeave(ev) {
+        beaker.classList.remove("drag-over");
+    }
+
+    function drop(ev) {
+        ev.preventDefault();
+        beaker.classList.remove("drag-over");
+        const id = ev.dataTransfer.getData("text/plain");
+        
+        if (id && shelfItems.includes(id) && beakerItems.length < 2) {
+            moveToBeaker(id);
+        }
+    }
+
+    // --- GAME LOGIC (CHEMISTRY EVALUATION) ---
+    function evaluateMix() {
+        const id1 = beakerItems[0];
+        const id2 = beakerItems[1];
+        const b1 = chemDB[id1];
+        const b2 = chemDB[id2];
+        
+        let isSuccess = false;
+        let msg = "";
+
+        // Rule 1: No Strong Acids/Bases
+        if (b1.type === "strong_acid" || b2.type === "strong_acid") {
+            msg = "Sai rồi! Acid mạnh (như HCl, HNO3) phân ly hoàn toàn, không có cân bằng chuyển dịch thuận nghịch để tạo hệ đệm.";
+        } else if (b1.type === "strong_base" || b2.type === "strong_base") {
+            msg = "Sai rồi! Base mạnh (như NaOH, KOH) phân ly hoàn toàn, không thể đóng vai trò tạo hệ đệm được.";
+        } 
+        // Rule 2: Must be a conjugate pair (Weak Acid/Base + its Salt)
+        else {
+            let isConjugatePair = false;
+            // Check if b1 is salt of b2
+            if (b1.type === "salt" && b1.conjugate === id2) isConjugatePair = true;
+            // Check if b2 is salt of b1
+            if (b2.type === "salt" && b2.conjugate === id1) isConjugatePair = true;
+
+            if (isConjugatePair) {
+                isSuccess = true;
+                msg = `Xuất sắc! Hệ đệm <strong>${b1.name} / ${b2.name}</strong> đã được pha chế thành công. Theo Bronsted-Lowry, sự hiện diện của cặp acid-base liên hợp giúp dung dịch kháng lại sự thay đổi pH.`;
+            } else {
+                msg = "Sai rồi! Để tạo hệ đệm, bạn bắt buộc phải kết hợp một Acid/Base yếu với đúng Muối (base/acid liên hợp) của chính nó.";
+            }
+        }
+
+        // Apply visual effects
+        if (isSuccess) {
+            liquid.style.backgroundColor = "rgba(34, 197, 94, 0.6)"; // Green
+            modalActionType = (currentLevel === levels.length - 1) ? "finish" : "next";
+            showModal("Thành công!", msg, "✅", "#16a34a", modalActionType === "finish" ? "Hoàn thành" : "Đơn hàng tiếp");
+        } else {
+            liquid.style.backgroundColor = "rgba(220, 38, 38, 0.6)"; // Red
+            beaker.classList.add("shake");
+            setTimeout(() => beaker.classList.remove("shake"), 400);
+            modalActionType = "retry";
+            showModal("Phản ứng lỗi!", msg, "💥", "#dc2626", "Làm lại");
+        }
+    }
+
+    // --- MODAL HANDLING ---
+    function showModal(title, msg, icon, color, btnText) {
+        modalTitle.innerText = title;
+        modalTitle.style.color = color;
+        modalMsg.innerHTML = msg;
+        modalIcon.innerText = icon;
+        modalBtn.innerText = btnText;
+        modalBtn.style.backgroundColor = color;
+        modalOverlay.classList.remove("hidden");
+    }
+
+    function handleModalAction() {
+        modalOverlay.classList.add("hidden");
+        
+        if (modalActionType === "next") {
+            currentLevel++;
+            loadLevel();
+        } else if (modalActionType === "retry") {
+            resetBeaker();
+        } else if (modalActionType === "finish") {
+            progressFill.style.width = "100%";
+            orderBoard.innerHTML = "<strong>🎉 Chúc mừng!</strong><br/>Bạn đã hoàn thành xuất sắc khóa huấn luyện. Trở thành Dược sĩ Pha chế Hệ đệm chuyên nghiệp!";
+            shelfDiv.innerHTML = "";
+            beakerSlots.innerHTML = "";
+            liquid.style.height = "0%";
+            document.querySelector(".reset-btn").classList.add("hidden");
+        }
+    }
+
+    // Bắt đầu game
+    window.onload = initGame;
+
+</script>
+</body>
+</html>
